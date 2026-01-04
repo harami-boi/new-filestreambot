@@ -81,7 +81,7 @@ async def transmit_file(file_id):
         await return_streaming_bot(selected_bot)
         abort(416, "Invalid range.")
 
-    chunk_size = 1024 * 1024
+    chunk_size = 128 * 1024
     until_bytes = min(until_bytes, file_size - 1)
 
     offset = from_bytes - (from_bytes % chunk_size)
