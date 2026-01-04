@@ -22,7 +22,12 @@ class Broadcast(BASE):
 
 
 def start() -> scoped_session:
-    engine = create_engine(DB.DB_URL, client_encoding="utf8", poolclass=StaticPool)
+    engine = create_engine(
+        DB.DB_URL,
+        client_encoding="utf8",
+        pool_pre_ping=True,
+        pool_recycle=3600
+    )
     BASE.metadata.bind = engine
     BASE.metadata.create_all(engine)
     return scoped_session(sessionmaker(bind=engine, autoflush=False))
