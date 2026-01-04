@@ -39,11 +39,13 @@ SESSION = start()
 INSERTION_LOCK = threading.RLock()
 
 
+import asyncio
+
 def get_current_gmt_date():
     return datetime.now(timezone.utc).date()
 
 
-async def add_file_size(file_size: int):
+def _add_file_size_sync(file_size: int):
     with INSERTION_LOCK:
         try:
             today = get_current_gmt_date()
@@ -62,8 +64,12 @@ async def add_file_size(file_size: int):
         finally:
             SESSION.close()
 
+async def add_file_size(file_size: int):
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, _add_file_size_sync, file_size)
 
-async def get_total_stats():
+
+def _get_total_stats_sync():
     try:
         result = SESSION.query(
             func.sum(FileStats.total_files).label("total_files"),
@@ -78,8 +84,12 @@ async def get_total_stats():
     finally:
         SESSION.close()
 
+async def get_total_stats():
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, _get_total_stats_sync)
 
-async def get_today_stats():
+
+def _get_today_stats_sync():
     try:
         today = get_current_gmt_date()
         stats = SESSION.query(FileStats).filter_by(date=today).first()
@@ -92,8 +102,12 @@ async def get_today_stats():
     finally:
         SESSION.close()
 
+async def get_today_stats():
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, _get_today_stats_sync)
 
-async def get_yesterday_stats():
+
+def _get_yesterday_stats_sync():
     try:
         yesterday = get_current_gmt_date() - timedelta(days=1)
         stats = SESSION.query(FileStats).filter_by(date=yesterday).first()
@@ -106,8 +120,12 @@ async def get_yesterday_stats():
     finally:
         SESSION.close()
 
+async def get_yesterday_stats():
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, _get_yesterday_stats_sync)
 
-async def get_last_7_days_stats():
+
+def _get_last_7_days_stats_sync():
     try:
         seven_days_ago = get_current_gmt_date() - timedelta(days=7)
         today = get_current_gmt_date()
@@ -127,6 +145,10 @@ async def get_last_7_days_stats():
         return 0, 0
     finally:
         SESSION.close()
+
+async def get_last_7_days_stats():
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, _get_last_7_days_stats_sync)
 
 
 def format_file_size(size_bytes) -> str:
