@@ -1,4 +1,5 @@
 import threading
+import asyncio
 from sqlalchemy import create_engine
 from sqlalchemy import Column, TEXT, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
@@ -37,7 +38,7 @@ SESSION = start()
 INSERTION_LOCK = threading.RLock()
 
 
-async def add_user(user_id, user_name):
+def _add_user_sync(user_id, user_name):
     with INSERTION_LOCK:
         try:
             usr = SESSION.query(Broadcast).filter_by(user_id=user_id).one()
@@ -46,8 +47,12 @@ async def add_user(user_id, user_name):
             SESSION.add(usr)
             SESSION.commit()
 
+async def add_user(user_id, user_name):
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, _add_user_sync, user_id, user_name)
 
-async def is_user(user_id):
+
+def _is_user_sync(user_id):
     with INSERTION_LOCK:
         try:
             usr = SESSION.query(Broadcast).filter_by(user_id=user_id).one()
@@ -55,16 +60,24 @@ async def is_user(user_id):
         except NoResultFound:
             return False
 
+async def is_user(user_id):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, _is_user_sync, user_id)
 
-async def query_msg():
+
+def _query_msg_sync():
     try:
         query = SESSION.query(Broadcast.user_id).order_by(Broadcast.user_id)
         return query.all()
     finally:
         SESSION.close()
 
+async def query_msg():
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, _query_msg_sync)
 
-async def del_user(user_id):
+
+def _del_user_sync(user_id):
     with INSERTION_LOCK:
         try:
             usr = SESSION.query(Broadcast).filter_by(user_id=user_id[0]).one()
@@ -72,3 +85,7 @@ async def del_user(user_id):
             SESSION.commit()
         except NoResultFound:
             pass
+
+async def del_user(user_id):
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, _del_user_sync, user_id)
