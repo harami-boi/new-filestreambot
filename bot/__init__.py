@@ -10,7 +10,12 @@ version = 1.6
 logger = getLogger("bot")
 
 TelegramBot = TelegramClient(
-    session="bot", api_id=Telegram.API_ID, api_hash=Telegram.API_HASH
+    session="bot",
+    api_id=Telegram.API_ID,
+    api_hash=Telegram.API_HASH,
+    timeout=60,
+    connection_retries=None,
+    request_retries=5,
 )
 
 _streaming_bots = []
@@ -32,6 +37,9 @@ def initialize_streaming_bots():
             session=f"stream_bot_{i}",
             api_id=Telegram.API_ID,
             api_hash=Telegram.API_HASH,
+            timeout=60,
+            connection_retries=None,
+            request_retries=5,
         )
         bot._token = token
         _streaming_bots.append(bot)
